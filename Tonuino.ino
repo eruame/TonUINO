@@ -262,11 +262,7 @@ void loop() {
       ignorePauseButton = false;
     } else if (pauseButton.pressedFor(LONG_PRESS) &&
                ignorePauseButton == false) {
-<<<<<<< HEAD
       // updateMillis()
-=======
-      updateMillis()
->>>>>>> 57624ad18b4f41c75a31db4048ba49bbd2b284c2
       if (isPlaying())
         mp3.playAdvertisement(currentTrack);
       else {
@@ -281,20 +277,12 @@ void loop() {
     }
 
     if (upButton.pressedFor(LONG_PRESS)) {
-<<<<<<< HEAD
       // updateMillis()
-=======
-      updateMillis()
->>>>>>> 57624ad18b4f41c75a31db4048ba49bbd2b284c2
       Serial.println(F("Volume Up"));
       mp3.increaseVolume();
       ignoreUpButton = true;
     } else if (upButton.wasReleased()) {
-<<<<<<< HEAD
       // updateMillis()
-=======
-      updateMillis()
->>>>>>> 57624ad18b4f41c75a31db4048ba49bbd2b284c2
       if (!ignoreUpButton)
         nextTrack(random(65536));
       else
@@ -302,20 +290,12 @@ void loop() {
     }
 
     if (downButton.pressedFor(LONG_PRESS)) {
-<<<<<<< HEAD
       // updateMillis()
-=======
-      updateMillis()
->>>>>>> 57624ad18b4f41c75a31db4048ba49bbd2b284c2
       Serial.println(F("Volume Down"));
       mp3.decreaseVolume();
       ignoreDownButton = true;
     } else if (downButton.wasReleased()) {
-<<<<<<< HEAD
       // updateMillis()
-=======
-      updateMillis()
->>>>>>> 57624ad18b4f41c75a31db4048ba49bbd2b284c2
       if (!ignoreDownButton)
         previousTrack();
       else
