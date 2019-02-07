@@ -42,6 +42,7 @@ public:
     Serial.print("Track beendet");
     Serial.println(track);
     delay(100);
+    updateMillis()
     nextTrack(track);
   }
   static void OnCardOnline(uint16_t code) {
@@ -64,7 +65,7 @@ static void nextTrack(uint16_t track) {
     return;
    }
    _lastTrackFinished = track;
-   
+
    if (knownCard == false)
     // Wenn eine neue Karte angelernt wird soll das Ende eines Tracks nicht
     // verarbeitet werden
@@ -80,7 +81,7 @@ static void nextTrack(uint16_t track) {
       mp3.playFolderTrack(myCard.folder, currentTrack);
       Serial.print(F("Albummodus ist aktiv -> nächster Track: "));
       Serial.print(currentTrack);
-    } else 
+    } else
 //      mp3.sleep();   // Je nach Modul kommt es nicht mehr zurück aus dem Sleep!
     { }
   }
@@ -161,6 +162,7 @@ MFRC522::StatusCode status;
 #define buttonUp A1
 #define buttonDown A2
 #define busyPin 4
+#define shutdownPin 7
 
 #define LONG_PRESS 1000
 
@@ -172,8 +174,22 @@ bool ignoreUpButton = false;
 bool ignoreDownButton = false;
 
 uint8_t numberOfCards = 0;
+unsigned uint64_t previousMillis = 0; // last time update
+unsigned uint64_t currentMillis = 0;
+uint64_t TimeTL = 300000; // 5 Minuten zu leben, interval at which to do something (milliseconds)
 
 bool isPlaying() { return !digitalRead(busyPin); }
+
+void updateMillis(){
+    previousMillis = millis();
+}
+
+void checkMillis(){
+    currentMillis = millis();
+    if (!isPlaying() && (currentMillis - previousMillis >= TimeTL )){
+        digitalWrite(shutdownPin, LOW);
+    }
+}
 
 void setup() {
 
@@ -189,8 +205,16 @@ void setup() {
   pinMode(buttonUp, INPUT_PULLUP);
   pinMode(buttonDown, INPUT_PULLUP);
 
+
+  // Auto-Off
+  pinMode(shutdownPin, OUTPUT);
+  digitalWrite(shutdownPin, HIGH);
+
   // Busy Pin
   pinMode(busyPin, INPUT);
+
+  // init time checking
+  previousMillis = millis();
 
   // DFPlayer Mini initialisieren
   mp3.begin();
@@ -218,7 +242,9 @@ void setup() {
 }
 
 void loop() {
+  checkMillis()
   do {
+    checkMillis()
     mp3.loop();
     // Buttons werden nun über JS_Button gehandelt, dadurch kann jede Taste
     // doppelt belegt werden
@@ -227,6 +253,7 @@ void loop() {
     downButton.read();
 
     if (pauseButton.wasReleased()) {
+      updateMillis()
       if (ignorePauseButton == false)
         if (isPlaying())
           mp3.pause();
@@ -235,6 +262,7 @@ void loop() {
       ignorePauseButton = false;
     } else if (pauseButton.pressedFor(LONG_PRESS) &&
                ignorePauseButton == false) {
+      // updateMillis()
       if (isPlaying())
         mp3.playAdvertisement(currentTrack);
       else {
@@ -249,10 +277,12 @@ void loop() {
     }
 
     if (upButton.pressedFor(LONG_PRESS)) {
+      // updateMillis()
       Serial.println(F("Volume Up"));
       mp3.increaseVolume();
       ignoreUpButton = true;
     } else if (upButton.wasReleased()) {
+      // updateMillis()
       if (!ignoreUpButton)
         nextTrack(random(65536));
       else
@@ -260,10 +290,12 @@ void loop() {
     }
 
     if (downButton.pressedFor(LONG_PRESS)) {
+      // updateMillis()
       Serial.println(F("Volume Down"));
       mp3.decreaseVolume();
       ignoreDownButton = true;
     } else if (downButton.wasReleased()) {
+      // updateMillis()
       if (!ignoreDownButton)
         previousTrack();
       else
@@ -278,6 +310,7 @@ void loop() {
     return;
 
   if (readCard(&myCard) == true) {
+    updateMillis()
     if (myCard.cookie == 322417479 && myCard.folder != 0 && myCard.mode != 0) {
 
       knownCard = true;
@@ -325,6 +358,7 @@ void loop() {
 
     // Neue Karte konfigurieren
     else {
+      updateMillis()
       knownCard = false;
       setupCard();
     }
@@ -380,7 +414,7 @@ int voiceMenu(int numberOfOptions, int startMessage, int messageOffset,
       } else
         ignoreUpButton = false;
     }
-    
+
     if (downButton.pressedFor(LONG_PRESS)) {
       returnValue = max(returnValue - 10, 1);
       mp3.playMp3FolderTrack(messageOffset + returnValue);
