@@ -1,7 +1,7 @@
-#include <DFMiniMp3.h>
+  #include "DFMiniMp3.h"
 #include <EEPROM.h>
-#include <JC_Button.h>
-#include <MFRC522.h>
+#include "JC_Button.h"
+#include "MFRC522.h"
 #include <SPI.h>
 #include <SoftwareSerial.h>
 
@@ -22,6 +22,7 @@ struct nfcTagObject {
 nfcTagObject myCard;
 
 static void nextTrack(uint16_t track);
+void updateMillis();
 int voiceMenu(int numberOfOptions, int startMessage, int messageOffset,
               bool preview = false, int previewFromFolder = 0);
 
@@ -39,10 +40,10 @@ public:
     Serial.println(errorCode);
   }
   static void OnPlayFinished(uint16_t track) {
-    Serial.print("Track beendet");
+    Serial.print("Track beendet, ");
     Serial.println(track);
     delay(100);
-    updateMillis()
+    updateMillis();
     nextTrack(track);
   }
   static void OnCardOnline(uint16_t code) {
@@ -174,9 +175,10 @@ bool ignoreUpButton = false;
 bool ignoreDownButton = false;
 
 uint8_t numberOfCards = 0;
-unsigned uint64_t previousMillis = 0; // last time update
-unsigned uint64_t currentMillis = 0;
+uint64_t previousMillis = 0; // last time update
+uint64_t currentMillis = 0;
 uint64_t TimeTL = 300000; // 5 Minuten zu leben, interval at which to do something (milliseconds)
+// uint64_t TimeTL = 5000;
 
 bool isPlaying() { return !digitalRead(busyPin); }
 
@@ -186,7 +188,10 @@ void updateMillis(){
 
 void checkMillis(){
     currentMillis = millis();
-    if (!isPlaying() && (currentMillis - previousMillis >= TimeTL )){
+    if (isPlaying()) {
+      updateMillis();
+    } else if (currentMillis - previousMillis >= TimeTL ){
+        Serial.println("Schalte ab.");
         digitalWrite(shutdownPin, LOW);
     }
 }
@@ -242,9 +247,9 @@ void setup() {
 }
 
 void loop() {
-  checkMillis()
+  checkMillis();
   do {
-    checkMillis()
+    checkMillis();
     mp3.loop();
     // Buttons werden nun über JS_Button gehandelt, dadurch kann jede Taste
     // doppelt belegt werden
@@ -253,7 +258,7 @@ void loop() {
     downButton.read();
 
     if (pauseButton.wasReleased()) {
-      updateMillis()
+      updateMillis();
       if (ignorePauseButton == false)
         if (isPlaying())
           mp3.pause();
@@ -310,7 +315,7 @@ void loop() {
     return;
 
   if (readCard(&myCard) == true) {
-    updateMillis()
+    updateMillis();
     if (myCard.cookie == 322417479 && myCard.folder != 0 && myCard.mode != 0) {
 
       knownCard = true;
@@ -358,7 +363,7 @@ void loop() {
 
     // Neue Karte konfigurieren
     else {
-      updateMillis()
+      updateMillis();
       knownCard = false;
       setupCard();
     }
