@@ -1,7 +1,7 @@
-  #include "DFMiniMp3.h"
+#include <DFMiniMp3.h>
 #include <EEPROM.h>
-#include "JC_Button.h"
-#include "MFRC522.h"
+#include <JC_Button.h>
+#include <MFRC522.h>
 #include <SPI.h>
 #include <SoftwareSerial.h>
 
@@ -40,7 +40,7 @@ public:
     Serial.println(errorCode);
   }
   static void OnPlayFinished(uint16_t track) {
-    Serial.print("Track beendet, ");
+    Serial.print("Track beendet");
     Serial.println(track);
     delay(100);
     updateMillis();
@@ -55,6 +55,15 @@ public:
   static void OnCardRemoved(uint16_t code) {
     Serial.println(F("SD Karte entfernt "));
   }
+  static void OnUsbOnline(uint16_t code) {
+      Serial.println(F("USB online "));
+  }
+  static void OnUsbInserted(uint16_t code) {
+      Serial.println(F("USB bereit "));
+  }
+  static void OnUsbRemoved(uint16_t code) {
+    Serial.println(F("USB entfernt "));
+  }
 };
 
 static DFMiniMp3<SoftwareSerial, Mp3Notify> mp3(mySoftwareSerial);
@@ -66,7 +75,7 @@ static void nextTrack(uint16_t track) {
     return;
    }
    _lastTrackFinished = track;
-
+   
    if (knownCard == false)
     // Wenn eine neue Karte angelernt wird soll das Ende eines Tracks nicht
     // verarbeitet werden
@@ -82,7 +91,7 @@ static void nextTrack(uint16_t track) {
       mp3.playFolderTrack(myCard.folder, currentTrack);
       Serial.print(F("Albummodus ist aktiv -> nächster Track: "));
       Serial.print(currentTrack);
-    } else
+    } else 
 //      mp3.sleep();   // Je nach Modul kommt es nicht mehr zurück aus dem Sleep!
     { }
   }
@@ -148,6 +157,20 @@ static void previousTrack() {
   }
 }
 
+void updateMillis(){
+    previousMillis = millis();
+}
+
+void checkMillis(){
+    currentMillis = millis();
+    if (isPlaying()) {
+      updateMillis();
+    } else if (currentMillis - previousMillis >= TimeTL ){
+        Serial.println("Schalte ab.");
+        digitalWrite(shutdownPin, LOW);
+    }
+}
+
 // MFRC522
 #define RST_PIN 9                 // Configurable, see typical pin layout above
 #define SS_PIN 10                 // Configurable, see typical pin layout above
@@ -178,23 +201,8 @@ uint8_t numberOfCards = 0;
 uint64_t previousMillis = 0; // last time update
 uint64_t currentMillis = 0;
 uint64_t TimeTL = 300000; // 5 Minuten zu leben, interval at which to do something (milliseconds)
-// uint64_t TimeTL = 5000;
 
 bool isPlaying() { return !digitalRead(busyPin); }
-
-void updateMillis(){
-    previousMillis = millis();
-}
-
-void checkMillis(){
-    currentMillis = millis();
-    if (isPlaying()) {
-      updateMillis();
-    } else if (currentMillis - previousMillis >= TimeTL ){
-        Serial.println("Schalte ab.");
-        digitalWrite(shutdownPin, LOW);
-    }
-}
 
 void setup() {
 
@@ -210,16 +218,15 @@ void setup() {
   pinMode(buttonUp, INPUT_PULLUP);
   pinMode(buttonDown, INPUT_PULLUP);
 
-
-  // Auto-Off
+    // Auto-Off
   pinMode(shutdownPin, OUTPUT);
   digitalWrite(shutdownPin, HIGH);
 
+    // init time checking
+  previousMillis = millis();
+
   // Busy Pin
   pinMode(busyPin, INPUT);
-
-  // init time checking
-  previousMillis = millis();
 
   // DFPlayer Mini initialisieren
   mp3.begin();
@@ -247,7 +254,6 @@ void setup() {
 }
 
 void loop() {
-  checkMillis();
   do {
     checkMillis();
     mp3.loop();
@@ -259,15 +265,15 @@ void loop() {
 
     if (pauseButton.wasReleased()) {
       updateMillis();
-      if (ignorePauseButton == false)
+      if (ignorePauseButton == false) {
         if (isPlaying())
           mp3.pause();
         else
           mp3.start();
+      }
       ignorePauseButton = false;
     } else if (pauseButton.pressedFor(LONG_PRESS) &&
                ignorePauseButton == false) {
-      // updateMillis()
       if (isPlaying())
         mp3.playAdvertisement(currentTrack);
       else {
@@ -282,12 +288,10 @@ void loop() {
     }
 
     if (upButton.pressedFor(LONG_PRESS)) {
-      // updateMillis()
       Serial.println(F("Volume Up"));
       mp3.increaseVolume();
       ignoreUpButton = true;
     } else if (upButton.wasReleased()) {
-      // updateMillis()
       if (!ignoreUpButton)
         nextTrack(random(65536));
       else
@@ -295,12 +299,10 @@ void loop() {
     }
 
     if (downButton.pressedFor(LONG_PRESS)) {
-      // updateMillis()
       Serial.println(F("Volume Down"));
       mp3.decreaseVolume();
       ignoreDownButton = true;
     } else if (downButton.wasReleased()) {
-      // updateMillis()
       if (!ignoreDownButton)
         previousTrack();
       else
@@ -419,7 +421,7 @@ int voiceMenu(int numberOfOptions, int startMessage, int messageOffset,
       } else
         ignoreUpButton = false;
     }
-
+    
     if (downButton.pressedFor(LONG_PRESS)) {
       returnValue = max(returnValue - 10, 1);
       mp3.playMp3FolderTrack(messageOffset + returnValue);
