@@ -1,7 +1,7 @@
-#include <DFMiniMp3.h>
+#include "DFMiniMp3.h"
 #include <EEPROM.h>
-#include <JC_Button.h>
-#include <MFRC522.h>
+#include "JC_Button.h"
+#include "MFRC522.h"
 #include <SPI.h>
 #include <SoftwareSerial.h>
 
@@ -157,20 +157,6 @@ static void previousTrack() {
   }
 }
 
-void updateMillis(){
-    previousMillis = millis();
-}
-
-void checkMillis(){
-    currentMillis = millis();
-    if (isPlaying()) {
-      updateMillis();
-    } else if (currentMillis - previousMillis >= TimeTL ){
-        Serial.println("Schalte ab.");
-        digitalWrite(shutdownPin, LOW);
-    }
-}
-
 // MFRC522
 #define RST_PIN 9                 // Configurable, see typical pin layout above
 #define SS_PIN 10                 // Configurable, see typical pin layout above
@@ -203,6 +189,20 @@ uint64_t currentMillis = 0;
 uint64_t TimeTL = 300000; // 5 Minuten zu leben, interval at which to do something (milliseconds)
 
 bool isPlaying() { return !digitalRead(busyPin); }
+
+void updateMillis(){
+    previousMillis = millis();
+}
+
+void checkMillis(){
+    currentMillis = millis();
+    if (isPlaying()) {
+      updateMillis();
+    } else if (currentMillis - previousMillis >= TimeTL ){
+        Serial.println("Schalte ab.");
+        digitalWrite(shutdownPin, LOW);
+    }
+}
 
 void setup() {
 
