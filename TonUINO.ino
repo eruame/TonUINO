@@ -155,13 +155,13 @@ void resetSettings() {
   mySettings.initVolume = 15;
   mySettings.eq = 1;
   mySettings.locked = false;
-  mySettings.standbyTimer = 0;
+  mySettings.standbyTimer = 5; // Original: mySettings.standbyTimer = 0; timer wird in Minuten angegeben
   mySettings.invertVolumeButtons = true;
   mySettings.shortCuts[0].folder = 0;
   mySettings.shortCuts[1].folder = 0;
   mySettings.shortCuts[2].folder = 0;
   mySettings.shortCuts[3].folder = 0;
-  mySettings.adminMenuLocked = 0;
+  mySettings.adminMenuLocked = 3; // Original: mySettings.adminMenuLocked = 0; 3: Rechenaufgabe
   mySettings.adminMenuPin[0] = 1;
   mySettings.adminMenuPin[1] = 1;
   mySettings.adminMenuPin[2] = 1;
